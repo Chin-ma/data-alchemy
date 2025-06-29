@@ -183,7 +183,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ _id: itemId, ...itemToSend }),
+        body: JSON.stringify({ ...itemToSend, _id: itemId }),
       });
 
       const result = await response.json();
@@ -461,7 +461,8 @@ export default function Home() {
                 <tr key={row._id || rowIndex}> {/* Use MongoDB _id if available */}
                   {headers.map((header, colIndex) => {
                     const isEditing = editingCell?.rowIndex === rowIndex && editingCell?.colName === header && editingCell?.entityType === entityName;
-                    const cellErrors = row._validationErrors && row._validationErrors.filter(error => error.includes(header)); // Filter errors relevant to this column
+                    // const cellErrors = row._validationErrors && row._validationErrors.filter(error => error.includes(header)); // Filter errors relevant to this column
+                    const cellErrors = row._validationErrors ? row._validationErrors.filter((error: string) => error.includes(header)) : [];
 
                     let displayValue = row[header];
                     if (typeof displayValue === 'object' && displayValue !== null) {

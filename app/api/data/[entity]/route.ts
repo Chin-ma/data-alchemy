@@ -9,7 +9,8 @@ const VALID_ENTITIES = ['clients', 'workers', 'tasks'] as const;
 type EntityType = typeof VALID_ENTITIES[number];
 
 // Utility to validate entity param
-const isValidEntity = (entity: string): entity is EntityType => VALID_ENTITIES.includes(entity as EntityType);
+const isValidEntity = (entity: string): entity is EntityType =>
+  VALID_ENTITIES.includes(entity as EntityType);
 
 // Shared response utility
 const respond = (
@@ -21,8 +22,8 @@ const respond = (
 // --------------------
 // GET: Fetch documents
 // --------------------
-export async function GET(_: NextRequest, context: { params: { entity: string } }) {
-  const { entity } = await context.params;
+export async function GET(request: NextRequest, context: any) {
+  const { entity } = context.params;
 
   if (!isValidEntity(entity)) {
     return respond('Invalid entity type specified. Must be clients, workers, or tasks.', 400);
@@ -41,8 +42,8 @@ export async function GET(_: NextRequest, context: { params: { entity: string } 
 // ---------------------------
 // PUT: Update single document
 // ---------------------------
-export async function PUT(request: NextRequest, context: { params: { entity: string } }) {
-  const { entity } = await context.params;
+export async function PUT(request: NextRequest, context: any) {
+  const { entity } = context.params;
 
   if (!isValidEntity(entity)) {
     return respond('Invalid entity type specified. Must be clients, workers, or tasks.', 400);
@@ -64,7 +65,7 @@ export async function PUT(request: NextRequest, context: { params: { entity: str
 
     const finalUpdate = {
       ...updatedFields,
-      _validationErrors: validationErrors.length > 0 ? validationErrors : null
+      _validationErrors: validationErrors.length > 0 ? validationErrors : null,
     };
 
     const result = await collection.updateOne(
@@ -88,8 +89,8 @@ export async function PUT(request: NextRequest, context: { params: { entity: str
 // ------------------------------
 // DELETE: Delete single document
 // ------------------------------
-export async function DELETE(request: NextRequest, context: { params: { entity: string } }) {
-  const { entity } = await context.params;
+export async function DELETE(request: NextRequest, context: any) {
+  const { entity } = context.params;
 
   if (!isValidEntity(entity)) {
     return respond('Invalid entity type specified. Must be clients, workers, or tasks.', 400);

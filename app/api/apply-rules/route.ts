@@ -133,7 +133,7 @@ export async function POST() {
   try {
     const { db } = await connectToDatabase();
     const rulesCollection = db.collection("rules");
-    const storedRules = await rulesCollection.find({ enabled: true }).toArray();
+    const storedRules: Rule[] = await rulesCollection.find({ enabled: true }).toArray();
     const entities = ["clients", "workers", "tasks"];
     const results: Record<string, any> = {};
 
@@ -147,8 +147,8 @@ export async function POST() {
         const changedFields = new Set<string>();
 
         const applicableRules = storedRules
-          .filter(rule => rule.entityType === entityType || rule.entityType === "general")
-          .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+          .filter((rule: Rule) => rule.entityType === entityType || rule.entityType === "general")
+          .sort((a: Rule, b: Rule) => (b.priority || 0) - (a.priority || 0));
 
         for (const rule of applicableRules) {
           const conditionsMet = rule.conditions.every(condition => evaluateCondition(modifiedDoc, condition));

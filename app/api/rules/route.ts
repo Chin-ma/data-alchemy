@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongo';
-import { ObjectId } from 'mongodb';
+import { ObjectId, Collection } from 'mongodb';
 
 // --------------------------
 // Interfaces
 // --------------------------
 interface Rule {
-  _id?: string;
-  [key: string]: any; // For dynamic fields like type, payload, etc.
+  _id?: string | ObjectId;
+  type: string; // Enforce required fields
+  payload: any;
+  [key: string]: any; // For additional dynamic fields
 }
 
 // --------------------------
@@ -16,7 +18,7 @@ interface Rule {
 export async function GET() {
   try {
     const { db } = await connectToDatabase();
-    const collection = db.collection<Rule>('rules');
+    const collection: Collection<Rule> = db.collection('rules');
     const rules = await collection.find({}).toArray();
 
     return NextResponse.json({ rules }, { status: 200 });
@@ -32,7 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { db } = await connectToDatabase();
-    const collection = db.collection<Rule>('rules');
+    const collection: Collection<Rule> = db.collection('rules');
 
     const newRule: Rule = await request.json();
     if (!newRule.type || !newRule.payload) {
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { db } = await connectToDatabase();
-    const collection = db.collection<Rule>('rules');
+    const collection: Collection<Rule> = db.collection('rules');
 
     const body: Rule = await request.json();
     const { _id, ...updatedFields } = body;
@@ -84,7 +86,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { db } = await connectToDatabase();
-    const collection = db.collection<Rule>('rules');
+    const collection: Collection<Rule> = db.collection('rules');
 
     const body: { _id?: string } = await request.json();
 

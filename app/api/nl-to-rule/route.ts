@@ -141,7 +141,7 @@ ${JSON.stringify(ruleSchema, null, 2)}
 `;
 
     console.log("Sending prompt to Gemini...");
-    const structuredRule: StructuredRule = await getStructuredAISuggestion(prompt, ruleSchema);
+    const structuredRule = await getStructuredAISuggestion(prompt, ruleSchema) as StructuredRule | null;
     console.log("Received structured response from Gemini:", structuredRule);
 
     if (!structuredRule) {
@@ -174,7 +174,7 @@ ${JSON.stringify(ruleSchema, null, 2)}
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error('Error in /api/nl-to-rule:', error);
+    console.error('Error in /api/ai-suggestions:', error);
     return NextResponse.json(
       { message: 'Internal server error during rule conversion.', error: error.message },
       { status: 500 }

@@ -89,7 +89,7 @@ const VisualizationDashboard: React.FC<VisualizationDashboardProps> = ({ data, e
         });
       } else if (typeof worker.Skills === 'string') {
         // Handle comma-separated string if not normalized to array on ingest
-        worker.Skills.split(',').map(s => s.trim()).filter(Boolean).forEach(skill => {
+        (worker.Skills as string).split(',').map(s => s.trim()).filter(Boolean).forEach(skill => {
           skillCounts[skill] = (skillCounts[skill] || 0) + 1;
         });
       }
@@ -248,7 +248,7 @@ const VisualizationDashboard: React.FC<VisualizationDashboardProps> = ({ data, e
                     outerRadius={100}
                     fill="#8884d8"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ payload: { name, value } }) => `${name} (${value})`}
                   >
                     {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />

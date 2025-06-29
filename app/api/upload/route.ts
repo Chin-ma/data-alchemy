@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongo';
 import { determineEntityType, validateData } from '@/lib/validators';
+import { Collection } from 'mongodb';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import path from 'path';
@@ -33,7 +34,7 @@ const parseCSV = async (buffer: Buffer): Promise<RowData[]> => {
       header: true,
       skipEmptyLines: true,
       complete: (results) => resolve(results.data),
-      error: (err) => reject(err),
+      error: (err: string | any) => reject(err),
     });
   });
 };
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
     }
 
     const { db } = await connectToDatabase();
-    const collection = db.collection<RowData>(entityType);
+    const collection: Collection<RowData> = db.collection(entityType);
 
     const validatedRows: RowData[] = parsedData.map((row) => {
       const errors = validateData(entityType, row);
