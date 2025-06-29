@@ -5,7 +5,8 @@ import { Collection } from 'mongodb';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises'; // Use promises for async file operations
+import os from 'os'; // Use os for platform-agnostic temp directory
 
 // -----------------------------
 // Types
@@ -21,9 +22,11 @@ interface RowData {
 const respond = (message: string, status = 200, extra: Record<string, any> = {}) =>
   NextResponse.json({ message, ...extra }, { status });
 
-const ensureDirExists = (dir: string) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+const ensureDirExists = async (dir: string) => {
+  try {
+    await fs.mkdir(dir, { recursive: true });
+  } catch (error: any) {
+    if (error.code !== 'EEXIST') throw error; // Ignore if directory already exists
   }
 };
 
@@ -49,8 +52,8 @@ const parseXLSX = (buffer: Buffer): RowData[] => {
 // POST Handler: File Upload
 // -----------------------------
 export async function POST(req: Request) {
-  const tempDir = path.join(process.cwd(), 'uploads_temp');
-  ensureDirExists(tempDir);
+  const tempDir = path.join(os.tmpdir(), 'uploads_temp'); // Use /tmp on Vercel
+  await ensureDirExists(tempDir);
 
   try {
     const formData = await req.formData();
@@ -62,7 +65,9 @@ export async function POST(req: Request) {
     const filename = file.name;
     const extension = path.extname(filename).toLowerCase();
     const tempPath = path.join(tempDir, filename);
-    fs.writeFileSync(tempPath, buffer);
+
+    // Write file asynchronously
+    await fs.writeFile(tempPath, buffer);
 
     // Parse the uploaded file
     let parsedData: RowData[] = [];
@@ -71,12 +76,12 @@ export async function POST(req: Request) {
     } else if (extension === '.xlsx') {
       parsedData = parseXLSX(buffer);
     } else {
-      fs.unlinkSync(tempPath);
+      await fs.unlink(tempPath).catch(() => {}); // Clean up even if unlink fails
       return respond('Unsupported file type. Please upload CSV or XLSX.', 400);
     }
 
     if (parsedData.length === 0) {
-      fs.unlinkSync(tempPath);
+      await fs.unlink(tempPath).catch(() => {});
       return respond('Uploaded file is empty or could not be parsed.', 400);
     }
 
@@ -85,7 +90,7 @@ export async function POST(req: Request) {
     const entityType = determineEntityType(headers);
 
     if (!entityType) {
-      fs.unlinkSync(tempPath);
+      await fs.unlink(tempPath).catch(() => {});
       return respond('Could not determine data type (clients, workers, or tasks) from file headers.', 400);
     }
 
@@ -102,7 +107,8 @@ export async function POST(req: Request) {
     await collection.deleteMany({});
     await collection.insertMany(validatedRows);
 
-    fs.unlinkSync(tempPath);
+    // Clean up temporary file
+    await fs.unlink(tempPath).catch(() => {});
 
     return respond(
       `File "${filename}" uploaded, parsed, and saved to "${entityType}" collection successfully.`,
@@ -114,6 +120,11 @@ export async function POST(req: Request) {
     );
   } catch (error: any) {
     console.error('File upload/processing error:', error);
+    // Attempt to clean up temporary file in case of error
+    const formData = await req.formData();
+    const file = formData.get('file') as File | null;
+    const tempPath = file ? path.join(tempDir, file.name) : '';
+    await fs.unlink(tempPath).catch(() => {});
     return respond('Error processing file.', 500, { error: error.message });
   }
 }
